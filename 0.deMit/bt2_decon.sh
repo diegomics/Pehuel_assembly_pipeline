@@ -31,11 +31,11 @@ BOWTIE2_DIR="~/Software/bowtie2-2.3.5.1"
 
 NEW=$(basename $FASTQ1 _1.fastq.gz)
 
-#mkdir $DIR/bt2_idx
+mkdir $DIR/bt2_idx
 
 
 ## build index
-#$BOWTIE2_DIR/bowtie2-build --threads 32 -f $FASTA $DIR/bt2_idx/$INDEX
+$BOWTIE2_DIR/bowtie2-build --threads 32 -f $FASTA $DIR/bt2_idx/$INDEX
 
 ## align reads
 $BOWTIE2_DIR/bowtie2 --local -p 32 -x $DIR/bt2_idx/\"$INDEX\" -1 $FASTQ1 -2 $FASTQ2 --un-conc $DIR/$NEW.demit --al-conc $DIR/$NEW.mit -S $DIR/$NEW.sam
