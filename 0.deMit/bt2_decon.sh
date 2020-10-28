@@ -38,7 +38,7 @@ NEW=$(basename $FASTQ1 _1.fastq.gz)
 #$BOWTIE2_DIR/bowtie2-build --threads 32 -f $FASTA $DIR/bt2_idx/$INDEX
 
 ## align reads
-$BOWTIE2_DIR/bowtie2 --local -p 32 -x $DIR/bt2_idx/\"$INDEX\" -1 $FASTQ1 -2 $FASTQ2 --un-conc $NEW.demit --al-conc $NEW.mit -S $NEW.sam
+$BOWTIE2_DIR/bowtie2 --local -p 32 -x $DIR/bt2_idx/\"$INDEX\" -1 $FASTQ1 -2 $FASTQ2 --un-conc $DIR/$NEW.demit --al-conc $DIR/$NEW.mit -S $DIR/$NEW.sam
 
 
 
