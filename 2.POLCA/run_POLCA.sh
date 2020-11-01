@@ -19,8 +19,8 @@ module load GCC/8.3.0
 module load GCCcore/8.3.0
 module load Perl/5.30.0-GCCcore-8.3.0
 module load Boost/1.71.0-gompic-2019b
-module load BWA
 
 export PATH=~/Software/MaSuRCA-3.4.2/bin:$PATH
+export PATH=~/Software/bwa-0.7.17:$PATH
 
 polca.sh -a ~/Assemblies/MaS/CA/final.genome.scf.fasta -r '~/ILLUMINA_demit.1.fq.gz ~/ILLUMINA_demit.2.fq.gz' -t 24 -m 1G
