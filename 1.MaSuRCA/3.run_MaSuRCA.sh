@@ -12,11 +12,13 @@
 ##SBATCH -w b001
 #SBATCH --qos=standard
 #SBATCH --cpus-per-task=24
-#SBATCH --mem-per-cpu=13G
-#SBATCH --time=72:00:00
+#SBATCH --mem-per-cpu=8G
+#SBATCH --time=48:00:00
 
-module load Boost
-module load Perl/5.30.2-GCCcore-9.3.0
+module load GCC/8.3.0
+module load GCCcore/8.3.0
+module load Perl/5.30.0-GCCcore-8.3.0
+module load Boost/1.71.0-gompic-2019b
 
 export PATH=~/Software/MaSuRCA-3.4.2/bin:$PATH
 
