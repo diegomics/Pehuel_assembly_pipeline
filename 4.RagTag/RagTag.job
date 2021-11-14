@@ -1,0 +1,60 @@
+#!/bin/bash
+
+## Full installation (ragtag-2.1.0) #########
+##conda create -n RAGTAG_env
+##conda activate RAGTAG_env
+##conda install -c bioconda mummer
+##conda install -c anaconda decorator
+##conda install -c anaconda networkx
+##conda install -c bioconda ragtag
+#############################################
+
+#SBATCH --job-name=ragtag
+#SBATCH -o ../stdout/ragtag.%j.out
+#SBATCH -e ../stderr/ragtag.%j.err
+##SBATCH -D
+
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=..@..
+
+#SBATCH --partition=begendiv,main
+#SBATCH --qos=standard
+#SBATCH --cpus-per-task=24
+##SBATCH --mem-per-cpu=1G
+#SBATCH --mem=32G
+#SBATCH --time=24:00:00
+
+export PATH=../Software/anaconda3/bin:$PATH
+source activate RAGTAG_env
+
+
+## Only change these: ###################################################################
+REF_GENOME="../Condor_project/existing_genomes_data/DNAzoo/gc_PacBio_HiC.fa"
+ASSEMBLY="../Condor_project/Pehuel/intermediates/PEHUEL.p1.fa"
+OUT_DIR="../Condor_project/Pehuel/intermediates/ragtag/3.correction_ONT"
+PE_DIR="../Condor_project/Pehuel/intermediates/trimming"
+PE_NAME="illuminaPE_demit"
+ONT="../Condor_project/Pehuel/intermediates/demit/minion_demit.fa"
+########################################################################################
+
+
+# 1.Scaffold
+mkdir -p $OUT_DIR/1.scaffold
+cd $OUT_DIR/1.scaffold
+ragtag.py scaffold $REF_GENOME $ASSEMBLY -o $OUT_DIR/1.scaffold -r -t 24
+
+
+# 2.Correct with PE reads
+mkdir -p $OUT_DIR/2.correction_PE
+cd $OUT_DIR/2.correction_PE
+for i in $(ls $PE_DIR/$PE_NAME\.*.fq)
+do
+        echo $i >> PE.fof
+done
+ragtag.py correct $REF_GENOME $OUT_DIR/1.scaffold/ragtag.scaffold.fasta -o $OUT_DIR/2.correction_PE -t 24 -F PE.fof -T sr
+
+
+# 3.Correct with ONT reads
+mkdir -p $OUT_DIR/3.correction_ONT
+cd $OUT_DIR/3.correction_ONT
+ragtag.py correct $REF_GENOME $OUT_DIR/2.correction_PE/ragtag.correct.fasta -o $OUT_DIR -t 24 -R $ONT -T ont
