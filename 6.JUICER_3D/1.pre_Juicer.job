@@ -1,0 +1,84 @@
+#!/bin/bash
+
+
+### GET JUICER 1.6 ###################################################
+##cd ../Software/
+##wget https://github.com/aidenlab/juicer/archive/refs/tags/1.6.tar.gz
+##tar -xvzf 1.6.tar.gz
+##mv juicer-1.6 juicer
+######################################################################
+
+### CREATE THE FOLLOWING MANDATORY GENERAL FOLDER STRUCTURE #############
+##mkdir ../Condor_project/Pehuel/intermediates/juicer
+##mkdir ../Condor_project/Pehuel/intermediates/juicer/tmp
+##mkdir ../Condor_project/Pehuel/intermediates/juicer/scripts
+##mkdir ../Condor_project/Pehuel/intermediates/juicer/misc
+##mkdir ../Condor_project/Pehuel/intermediates/juicer/references
+##mkdir ../Condor_project/Pehuel/intermediates/juicer/restriction_sites
+##mkdir ../Condor_project/Pehuel/intermediates/juicer/work
+#########################################################################
+
+### COPY SCRIPTS TO PROPER FOLDER IN MANDATORY FOLDER STRUCTURE ############################
+##cp ../Software/juicer/SLURM/scripts ../Condor_project/Pehuel/intermediates/juicer/scripts
+##cp ../Software/juicer/misc ../Condor_project/Pehuel/intermediates/juicer/misc
+############################################################################################
+
+### GET JUICER-TOOLS 1.19.02 #############################################################
+##cd ../Condor_project/Pehuel/intermediates/juicer/scripts
+##wget https://s3.amazonaws.com/hicfiles.tc4ga.com/public/juicer/juicer_tools_1.19.02.jar
+##ln -s juicer_tools_1.19.02.jar juicer_tools.jar
+##########################################################################################
+
+### IMPORTANT: juicer.sh HAS TO BE MODIFIED WITH OWN CLUSTER PARAMETERS IN ORDER TO WORK!!!!!!!
+
+
+#SBATCH --job-name=preJUICER
+#SBATCH -o ../stdout/preJUICER.%j.out
+#SBATCH -e ../stderr/preJUICER.%j.err
+##SBATCH -D 
+
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=..@..
+
+#SBATCH --partition=begendiv,main
+#SBATCH --qos=standard
+#SBATCH --cpus-per-task=1
+#SBATCH --mem-per-cpu=12G
+#SBATCH --time=01:00:00
+
+module load BWA/0.7.17-foss-2018b
+
+FASTA_WRAPPER="../Software/3d-dna/utils/wrap-fasta-sequence.awk"
+GENERATE_SITE_POSITIONS="../Condor_project/Pehuel/intermediates/juicer/misc/generate_site_positions.py"
+JUICER_DIR="../Condor_project/Pehuel/intermediates/juicer"
+
+
+## Only modify this: ##############################################
+REFERENCE="../Condor_project/Pehuel/intermediates/PEHUEL.s1.fa"
+NAME="PEHUEL.s1"
+###################################################################
+
+# 1. Set up folders and files
+mkdir -p /scratch/ddepanis/Assemblies/juicer/work/$NAME/fastq
+ln -s ../Condor_project/Pehuel/intermediates/trimming/hic_demit.1_val_1.fq ../Condor_project/Pehuel/intermediates/juicer/work/$NAME/fastq/HiCreads_R1.fastq
+ln -s ../Condor_project/Pehuel/intermediates/trimming/hic_demit.2_val_2.fq ../Condor_project/Pehuel/intermediates/juicer/work/$NAME/fastq/HiCreads_R2.fastq
+awk -f $FASTA_WRAPPER $REFERENCE > $JUICER_DIR/references/$NAME\.fa
+#ln -s $REFERENCE $JUICER_DIR/references/$NAME\.fa
+
+# 2. Create draft genome sequence index
+bwa index -p $JUICER_DIR/references/$NAME\.fa $JUICER_DIR/references/$NAME\.fa
+
+# 3. Pre-calculate the position of the enzyme restriction sites with respect to the draft genome sequence
+python $GENERATE_SITE_POSITIONS MboI $JUICER_DIR/restriction_sites/$NAME $JUICER_DIR/references/$NAME\.fa
+
+# 4. Create chrom.sizes file
+awk '{print $1,$NF}' $JUICER_DIR/restriction_sites/$NAME\_MboI.txt > $JUICER_DIR/restriction_sites/$NAME\_chrom.sizes
+
+##
+echo " "
+echo "All files and folders ready, please run IN A SCREEN the commands stored in the file /home/ddepanis/jobs/1.juicer_cmd to start the JUICER script"
+echo " "
+echo "module load BWA/0.7.17-foss-2018b; module load SAMtools/1.9-foss-2018b; module load Java/1.8.0_192; module load CUDA/10.0.130" > ../jobs/1.juicer_cmd
+echo " " >> ../jobs/1.juicer_cmd
+echo "bash /scratch/ddepanis/Assemblies/juicer/scripts/juicer.sh -d $JUICER_DIR/work/$NAME -g $NAME -z $JUICER_DIR/references/$NAME\.fa -s MboI -y $JUICER_DIR/restriction_sites/$NAME\_MboI.txt -p $JUICER_DIR/restriction_sites/$NAME\_chrom.sizes -S early -t 32 -A begendiv" >> ../jobs/1.juicer_cmd
+echo " "
