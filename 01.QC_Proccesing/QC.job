@@ -1,1 +1,41 @@
+#!/bin/bash
 
+#SBATCH -J QC
+#SBATCH -o ../stdout/QC.%j.out
+#SBATCH -e ../stderr/QC.%j.err
+
+
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=..@..
+
+#SBATCH --partition=begendiv,main
+#SBATCH --qos=standard
+#SBATCH --ntasks=2
+#SBATCH --cpus-per-task=1
+#SBATCH --mem-per-cpu=8G
+#SBATCH --time=24:00:00
+
+export PATH=../Software/anaconda3/bin:$PATH
+source activate QC_env
+
+### Only modify these: ############################################
+PE_DIR="../Condor_project/Pehuel/genomic_data/PE"
+HIC_DIR="../Condor_project/Pehuel/genomic_data/HiC"
+ONT_DIR="../Condor_project/Pehuel/genomic_data/ONT"
+OUT_DIR="../Condor_project/Pehuel/evaluation/QC"
+###################################################################
+
+mkdir -p $OUT_DIR/PE
+cd $OUT_DIR/PE
+fastqc -t ${SLURM_NTASKS} -f fastq -o $OUT_DIR/PE $PE_DIR/*
+multiqc -i Pehuel_PE_reads*
+
+mkdir -p $OUT_DIR/HiC
+cd $OUT_DIR/HiC
+fastqc -t ${SLURM_NTASKS} -f fastq -o $OUT_DIR/HiC $HIC_DIR/*
+multiqc -i Pehuel_HiC_reads*
+
+mkdir -p $OUT_DIR/ONT
+cd $OUT_DIR/ONT
+fastqc -t ${SLURM_NTASKS} -f fastq -o $OUT_DIR/ONT $ONT_DIR/*
+multiqc -i Pehuel_ONT_reads*
