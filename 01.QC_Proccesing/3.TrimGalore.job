@@ -1,0 +1,33 @@
+#!/bin/bash
+
+#SBATCH -J trimG
+#SBATCH -o ../stdout/trimG.%j.out
+#SBATCH -e ../stderr/trimG.%j.err
+##SBATCH -D 
+
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=..@..
+
+#SBATCH --partition=begendiv,main
+#SBATCH --qos=standard
+#SBATCH --cpus-per-task=24
+#SBATCH --mem=12G
+#SBATCH --time=12:00:00
+
+module load Trim_Galore/0.6.6-GCCcore-9.3.0-Python-3.8.2
+
+## Only change these: ##########################################################
+PE_FQ_1="../Condor_project/Pehuel/intermediates/demit/illuminaPE_demit.1.fq.gz"
+PE_FQ_2="../Condor_project/Pehuel/intermediates/demit/illuminaPE_demit.2.fq.gz"
+HIC_FQ_1="../Condor_project/Pehuel/intermediates/demit/hic_demit.1.fq"
+HIC_FQ_2="../Condor_project/Pehuel/intermediates/demit/hic_demit.2.fq"
+OUT_DIR="../Condor_project/Pehuel/intermediates/trimmed"
+################################################################################
+
+mkdir -p $OUT_DIR/PE
+cd $OUT_DIR/PE
+trim_galore -o $OUT_DIR/PE --length 50 --paired -j 24 $PE_FQ_1 $PE_FQ_2
+
+mkdir -p $OUT_DIR/HiC
+cd $OUT_DIR/HiC
+trim_galore -o $OUT_DIR/HiC --length 50 --paired -j 24 $HIC_FQ_1 $HIC_FQ_2
