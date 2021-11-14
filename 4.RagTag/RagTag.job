@@ -28,14 +28,14 @@ export PATH=../Software/anaconda3/bin:$PATH
 source activate RAGTAG_env
 
 
-## Only change these: ###################################################################
+## Only change these: #########################################################
 REF_GENOME="../Condor_project/existing_genomes_data/DNAzoo/gc_PacBio_HiC.fa"
 ASSEMBLY="../Condor_project/Pehuel/intermediates/PEHUEL.p1.fa"
 OUT_DIR="../Condor_project/Pehuel/intermediates/ragtag/3.correction_ONT"
 PE_DIR="../Condor_project/Pehuel/intermediates/trimming"
 PE_NAME="illuminaPE_demit"
 ONT="../Condor_project/Pehuel/intermediates/demit/minion_demit.fa"
-########################################################################################
+###############################################################################
 
 
 # 1.Scaffold
