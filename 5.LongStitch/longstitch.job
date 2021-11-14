@@ -1,0 +1,47 @@
+#!/bin/bash
+
+## FULL Installation (LongStitch v1.0.1) ##############
+##conda create -n LONGSTITCH_env
+##conda activate LONGSTITCH_env
+##conda install -c bioconda -c conda-forge longstitch
+#######################################################
+
+#SBATCH -J LongSt
+#SBATCH -o ../stdout/LongSt.%j.out
+#SBATCH -e ../stderr/LongSt.%j.err
+##SBATCH -D
+
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=..@..
+
+#SBATCH --partition=begendiv,main
+#SBATCH --qos=standard
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=24G
+#SBATCH --time=48:00:00
+
+export PATH=../Software/anaconda3/bin:$PATH
+source activate LONGSTITCH_env
+
+
+#########################################################################################
+# Only modify these variables:
+ASM="../Condor_project/Pehuel/intermediates/ragtag/2.correction_PE/ragtag.correct.fasta"
+ASM_NAME=$(basename $ASM .fasta)
+LONG_READS="../Condor_project/Pehuel/intermediates/demit/minion_demit.fq"
+READS_NAME=$(basename $LONG_READS .fq)
+GENOME_SIZE="1200000000"
+LONGST_DIR="../Condor_project/Pehuel/intermediates/longstitch"
+#########################################################################################
+
+mkdir -p $LONGST_DIR
+cd $LONGST_DIR
+
+ln -s $ASM $ASM_NAME\.fa
+#ln -s $LONG_READS $READS_NAME\.fq.gz
+cp $LONG_READS .
+pigz -p 8 $READS_NAME\.fq
+
+longstitch run draft=$ASM_NAME reads=$READS_NAME G=$GENOME_SIZE
+
+rm $READS_NAME\.fq.gz
