@@ -1,0 +1,80 @@
+#!/bin/bash
+
+## Full installation ###############################
+##conda create -n PURGEDUPS_env
+##conda activate PURGEDUPS_env
+##conda install -c bioconda purge_dups bwa samtools
+##conda install -c conda-forge matplotlib
+####################################################
+
+#SBATCH -J purge_dups
+#SBATCH -o ../stdout/purge_dups.%j.out
+#SBATCH -e ../stderr/purge_dups.%j.err
+##SBATCH -D
+
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=..@..
+
+#SBATCH --partition=begendiv,main
+#SBATCH --qos=standard
+#SBATCH --cpus-per-task=24
+#SBATCH --mem=48G
+#SBATCH --time=72:00:00
+
+export PATH=../Software/anaconda3/bin:$PATH
+source activate PURGEDUPS_env
+
+
+## Only change this: ##############################################################
+OUT_DIR="../Condor_project/Pehuel/intermediates/purge_dups"
+NAME="pehuel_alt"
+ASM="../Condor_project/Pehuel/intermediates/purge_dups/pehuel_alt/PEHUEL.c2p2.fa"
+ASM_NAME=$(basename $ASM .fa)
+FQ_1="../Condor_project/Pehuel/intermediates/trimming/illuminaPE_demit.1_val_1.fq"
+FQ_2="../Condor_project/Pehuel/intermediates/trimming/illuminaPE_demit.2_val_2.fq"
+FQ_NAME=$(basename $FQ_2 .2_val_2.fq)
+###################################################################################
+
+
+mkdir -p $OUT_DIR/$NAME/idx
+
+##### PART 1 (when finished, review, comment the lines and continue with the second part)
+#A: align Illumina PE (or 10x DEbarcoded) reads and generate BAM files, then calculate read depth histogram and base-level read depth
+# Indexing the reference (This should be done one time)
+cd $OUT_DIR/$NAME/idx
+bwa index -p $ASM_NAME -a bwtsw $ASM
+cd $OUT_DIR/$NAME
+bwa mem -t 18 $OUT_DIR/$NAME/idx/$ASM_NAME $FQ_1 $FQ_2 | samtools view -@ 6 -b -o - > $FQ_NAME\.bam
+ngscstat $FQ_NAME\.bam
+calcuts TX.stat > cutoffs 2>calcults.log
+HIST_PLOT="/scratch/ddepanis/Software/purge_dups/scripts/hist_plot.py"
+python3 $HIST_PLOT -c cutoffs TX.stat TX.png
+
+#B: Split an assembly and do a self-self alignment
+cd $OUT_DIR/$NAME
+split_fa $ASM > $ASM_NAME\.split
+minimap2 -t 18 -xasm5 -DP $ASM_NAME\.split $ASM_NAME\.split | pigz -p 6 -c - > $ASM_NAME\.split.self.paf.gz
+
+
+##### REVIEW (only run this part an rereview before starting the PART 2)
+# to manually change cutoff
+cd $OUT_DIR/$NAME
+LOW=10
+MID=43
+UP=129
+CUTOFFS=$LOW\_$MID\_$UP
+calcuts -l$LOW -m$MID -u$UP TX.stat > cutoffs_$CUTOFFS
+
+
+##### PART 2
+#C: Purge haplotigs and overlaps
+cd $OUT_DIR/$NAME
+purge_dups -2 -T cutoffs_$CUTOFFS -c TX.base.cov $ASM_NAME\.split.self.paf.gz > dups_$CUTOFFS\.bed 2> purge_dups_$CUTOFFS\.log
+
+#D: Get purged primary and haplotig sequences from draft assembly
+cd $OUT_DIR/$NAME
+get_seqs -e dups_$CUTOFFS\.bed $ASM
+mv purged.fa purged_$CUTOFFS\.fa
+mv hap.fa hap_$CUTOFFS\.fa
+
+#E: Merge hap.fa and the alternative assembly and redo the above steps to get the haplotig set.
