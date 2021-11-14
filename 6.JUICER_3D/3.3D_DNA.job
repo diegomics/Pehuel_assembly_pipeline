@@ -1,0 +1,46 @@
+#!/bin/bash
+
+### FULL Installation #########################################
+##conda create -n 3D_env
+##conda activate 3D_env
+##conda install -c conda-forge scipy numpy matplotlib parallel
+##conda install -c bioconda java-jdk lastz
+###############################################################
+
+#SBATCH -J 3D_5K_r2
+#SBATCH -o ../stdout/10K_r2.%j.out
+#SBATCH -e ../stderr/10K_r2.%j.err
+
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=..@..
+
+#SBATCH --partition=begendiv,main
+#SBATCH --qos=standard
+#SBATCH --cpus-per-task=8 #96
+#SBATCH --mem=64G #374G
+#SBATCH --time=168:00:00
+
+##SBATCH --dependency=afterok:370557
+
+export PATH=../Software/anaconda3/bin:$PATH
+source activate 3D_env
+export PATH=../Software/3d-dna:$PATH
+
+## Only change this: ################################################################################
+SIZE="5000"
+ROUNDS="2"
+TMP_DIR="../Condor_project/Pehuel/intermediates/3D/5K_r2/tmp"
+ASM='../Condor_project/Pehuel/intermediates/juicer/references/PEHUEL.s1.fa'
+NODUPS_FILE='../Condor_project/Pehuel/intermediates/juicer/work/PEHUEL.s1/aligned/merged_nodups.txt'
+#####################################################################################################
+PIPELINE="../Software/3d-dna/run-asm-pipeline.sh"
+
+mkdir -p $TMP_DIR
+export TMPDIR=$TMP_DIR
+cd $TMP_DIR
+cd ..
+
+$PIPELINE -i $SIZE -r $ROUNDS $ASM $NODUPS_FILE
+
+## use --merge flag to try solve undercollapsed heterozygosity (caution: currently under development)
+##check progress with wc -l h.scaffolds.original.notation.step.*.txt
