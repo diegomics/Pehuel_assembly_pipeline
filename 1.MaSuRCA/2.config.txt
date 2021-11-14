@@ -1,8 +1,8 @@
 # configuration file
 
 DATA
-PE = HM 350 77 ~/ILLUMINA_demit.1.fq.gz ~/ILLUMINA_demit.2.fq.gz
-#NANOPORE = ~/MINION_demit.fq.gz
+PE = HM 350 77 ../Condor_project/Pehuel/intermediates/trimming/illuminaPE_demit.1_val_1.fq ../Condor_project/Pehuel/intermediates/trimming/illuminaPE_demit.2_val_2.fq
+#NANOPORE = ../Condor_project/Pehuel/intermediates/demit/MINION_demit.fq.gz
 END
 
 PARAMETERS
