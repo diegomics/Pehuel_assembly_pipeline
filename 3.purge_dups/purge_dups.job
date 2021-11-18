@@ -94,5 +94,4 @@ mv hap.fa hap_$CUTOFFS\.fa
 #######################################################################
 
 
-
 #E: Merge hap.fa and alt_asm and redo the above steps to get the haplotig set.
