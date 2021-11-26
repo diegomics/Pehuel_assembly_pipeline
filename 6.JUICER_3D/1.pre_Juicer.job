@@ -76,7 +76,7 @@ awk '{print $1,$NF}' $JUICER_DIR/restriction_sites/$NAME\_MboI.txt > $JUICER_DIR
 
 ##
 echo " "
-echo "All files and folders ready, please run IN A SCREEN the commands stored in the file /home/ddepanis/jobs/1.juicer_cmd to start the JUICER script"
+echo "All files and folders ready, please run IN A SCREEN the commands stored in the file ../jobs/1.juicer_cmd to start the JUICER script"
 echo " "
 echo "module load BWA/0.7.17-foss-2018b; module load SAMtools/1.9-foss-2018b; module load Java/1.8.0_192; module load CUDA/10.0.130" > ../jobs/1.juicer_cmd
 echo " " >> ../jobs/1.juicer_cmd
