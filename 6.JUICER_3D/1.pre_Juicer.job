@@ -80,5 +80,5 @@ echo "All files and folders ready, please run IN A SCREEN the commands stored in
 echo " "
 echo "module load BWA/0.7.17-foss-2018b; module load SAMtools/1.9-foss-2018b; module load Java/1.8.0_192; module load CUDA/10.0.130" > ../jobs/1.juicer_cmd
 echo " " >> ../jobs/1.juicer_cmd
-echo "bash /scratch/ddepanis/Assemblies/juicer/scripts/juicer.sh -d $JUICER_DIR/work/$NAME -g $NAME -z $JUICER_DIR/references/$NAME\.fa -s MboI -y $JUICER_DIR/restriction_sites/$NAME\_MboI.txt -p $JUICER_DIR/restriction_sites/$NAME\_chrom.sizes -S early -t 32 -A begendiv" >> ../jobs/1.juicer_cmd
+echo "bash /scratch/ddepanis/Assemblies/juicer/scripts/juicer.sh -d $JUICER_DIR/work/$NAME -g $NAME -z $JUICER_DIR/references/"$NAME".fa -s MboI -y $JUICER_DIR/restriction_sites/"$NAME"_MboI.txt -p $JUICER_DIR/restriction_sites/"$NAME"_chrom.sizes -S early -t 32 -A begendiv" >> ../jobs/1.juicer_cmd
 echo " "
