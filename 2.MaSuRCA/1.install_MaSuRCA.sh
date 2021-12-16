@@ -1,9 +1,9 @@
 #!/bin/bash
 cd ~/Software
-wget https://github.com/alekseyzimin/masurca/releases/download/v4.0.5/MaSuRCA-4.0.5.tar.gz
-tar -xvzf MaSuRCA-4.0.5.tar.gz
-rm MaSuRCA-4.0.5.tar.gz
-cd MaSuRCA-4.0.5
+wget https://github.com/alekseyzimin/masurca/releases/download/v4.0.6/MaSuRCA-4.0.6.tar.gz
+tar -xvzf MaSuRCA-4.0.6.tar.gz
+rm MaSuRCA-4.0.6.tar.gz
+cd MaSuRCA-4.0.6
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 module load GCC/10.2.0
