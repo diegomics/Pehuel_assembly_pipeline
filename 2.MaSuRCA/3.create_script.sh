@@ -5,4 +5,4 @@ module load Boost/1.74.0-GCC-10.2.0
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 cd ../Condor_project/Pehuel/intermediates/masurca/PE
-../Software/MaSuRCA-3.4.2/bin/masurca -g config.txt
+../Software/MaSuRCA-4.0.6/bin/masurca config.txt
