@@ -1,21 +1,22 @@
 #!/bin/bash
 
-## Full installation ###############################
+## Full installation ######################################################
 ##conda create -n PURGEDUPS_env
 ##conda activate PURGEDUPS_env
 ##conda install -c bioconda purge_dups bwa samtools
 ##conda install -c conda-forge matplotlib
-####################################################
+###########################################################################
 
 #SBATCH -J purge_dups
 #SBATCH -o ../stdout/purge_dups.%j.out
 #SBATCH -e ../stderr/purge_dups.%j.err
-##SBATCH -D
+##SBATCH -D 
 
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=..@..
 
 #SBATCH --partition=begendiv,main
+##SBATCH -w b004
 #SBATCH --qos=standard
 #SBATCH --cpus-per-task=24
 #SBATCH --mem=48G
@@ -25,73 +26,160 @@ export PATH=../Software/anaconda3/bin:$PATH
 source activate PURGEDUPS_env
 
 
-## Only change this: ##############################################################
-OUT_DIR="../Condor_project/Pehuel/intermediates/purge_dups"
-NAME="pehuel_alt"
-ASM="../Condor_project/Pehuel/intermediates/purge_dups/pehuel_alt/PEHUEL.c2p2.fa"
-ASM_NAME=$(basename $ASM .fa)
+## Only change this: ############################################
+OUT_DIR="../Condor_project/Pehuel/intermediates/purge_dups/PEONT"
+PRI="../Condor_project/Pehuel/intermediates/masurca/PEONT/CA.mr.99.17.15.0.02/primary.genome.scf.fasta"
+PRI_NAME=$(basename $PRI .fasta)
+ALT="../Condor_project/Pehuel/intermediates/masurca/PEONT/CA.mr.99.17.15.0.02/alternative.genome.scf.fasta"
 FQ_1="../Condor_project/Pehuel/intermediates/trimming/illuminaPE_demit.1_val_1.fq"
 FQ_2="../Condor_project/Pehuel/intermediates/trimming/illuminaPE_demit.2_val_2.fq"
 FQ_NAME=$(basename $FQ_2 .2_val_2.fq)
-###################################################################################
+PARAM_DIR="../Condor_project/Pehuel/evaluation/genomescope/illuminaPE"
+TRANS="$(cat $PARAM_DIR/Transition_parameter)"
+MAX_DEPTH="$(cat $PARAM_DIR/Maximum_depth)"
+CUTOFFS=${TRANS}_$MAX_DEPTH
+HIST_PLOT="../Software/purge_dups/scripts/hist_plot.py"
+#################################################################
 
 
-mkdir -p $OUT_DIR/$NAME/idx
 
+##### PART 1
+mkdir -p $OUT_DIR/p1/idx
 
-##### PART 1 (when finished, review, comment the lines and continue with the second part)
-
-#A: align Illumina PE (or 10x DEbarcoded) reads and generate BAM files, then calculate read depth histogram and base-level read depth
+#A: align Illumina PE to c1 and generate BAM files, then calculate read depth histogram and base-level read depth
 # Indexing the reference (This should be done one time)
-cd $OUT_DIR/$NAME/idx
-bwa index -p $ASM_NAME -a bwtsw $ASM
-cd $OUT_DIR/$NAME
-bwa mem -t 18 $OUT_DIR/$NAME/idx/$ASM_NAME $FQ_1 $FQ_2 | samtools view -@ 6 -b -o - > $FQ_NAME\.bam
-ngscstat $FQ_NAME\.bam
+cd $OUT_DIR/p1/idx
+bwa index -p $PRI_NAME -a bwtsw $PRI
+cd $OUT_DIR/p1
+bwa mem -t 18 $OUT_DIR/p1/idx/$PRI_NAME $FQ_1 $FQ_2 | samtools view -@ 6 -b -o - > ${FQ_NAME}.bam
+ngscstat ${FQ_NAME}.bam
 calcuts TX.stat > cutoffs_default 2>calcults_default.log
-HIST_PLOT="/scratch/ddepanis/Software/purge_dups/scripts/hist_plot.py"
-python3 $HIST_PLOT -c cutoffs_default TX.stat TX.png
+python3 $HIST_PLOT -c cutoffs_default TX.stat TX_default.png
+
+### VGP suggested cutoffs:
+calcuts -m$TRANS -u$MAX_DEPTH TX.stat > cutoffs_$CUTOFFS
+python3 $HIST_PLOT -c cutoffs_$CUTOFFS TX.stat TX_${CUTOFFS}.png
+##
+
 
 #B: Split an assembly and do a self-self alignment
-cd $OUT_DIR/$NAME
-split_fa $ASM > $ASM_NAME\.split
-minimap2 -t 18 -xasm5 -DP $ASM_NAME\.split $ASM_NAME\.split | pigz -p 6 -c - > $ASM_NAME\.split.self.paf.gz
+cd $OUT_DIR/p1
+split_fa $PRI > ${PRI_NAME}.split
+minimap2 -t 18 -xasm5 -DP ${PRI_NAME}.split ${PRI_NAME}.split | pigz -p 6 -c - > ${PRI_NAME}.split.self.paf.gz
+
 
 ##### PART 2
 
 #C: Purge haplotigs and overlaps
-cd $OUT_DIR/$NAME
-purge_dups -2 -T cutoffs_default -c TX.base.cov $ASM_NAME\.split.self.paf.gz > dups_default.bed 2> purge_dups_default.log
+cd $OUT_DIR/p1
+purge_dups -2 -T cutoffs_default -c TX.base.cov ${PRI_NAME}.split.self.paf.gz > dups_default.bed 2> purge_dups_default.log
+purge_dups -2 -T cutoffs_$CUTOFFS -c TX.base.cov ${PRI_NAME}.split.self.paf.gz > dups_${CUTOFFS}.bed 2> purge_dups_${CUTOFFS}.log
+
 
 #D: Get purged primary and haplotig sequences from draft assembly
-cd $OUT_DIR/$NAME
-get_seqs -e dups_default.bed $ASM
+cd $OUT_DIR/p1
+get_seqs -e dups_default.bed $PRI
 mv purged.fa purged_default.fa
 mv hap.fa hap_default.fa
+get_seqs -e dups_${CUTOFFS}.bed $PRI
+mv purged.fa purged_${CUTOFFS}.fa
+mv hap.fa hap_${CUTOFFS}.fa
+
 
 
 ########################################################################
 ##### REVIEW
 # to manually change cutoff
-cd $OUT_DIR/$NAME
-LOW=10
-MID=43
-UP=99
-CUTOFFS=$LOW\_$MID\_$UP
-calcuts -l$LOW -m$MID -u$UP TX.stat > cutoffs_$CUTOFFS
+#cd $OUT_DIR/p1
+
+#LOW=5
+#MID=49
+#UP=129
+#CUTOFFS=${LOW}_${MID}_$UP
+#calcuts -l$LOW -m$MID -u$UP TX.stat > cutoffs_$CUTOFFS
+#python3 $HIST_PLOT -c cutoffs_$CUTOFFS TX.stat TX_${CUTOFFS}.png
 
 ##### PART 2 (post review)
 
 #C: Purge haplotigs and overlaps
-cd $OUT_DIR/$NAME
-purge_dups -2 -T cutoffs_$CUTOFFS -c TX.base.cov $ASM_NAME\.split.self.paf.gz > dups_$CUTOFFS\.bed 2> purge_dups_$CUTOFFS\.log
+#cd $OUT_DIR/p1
+#purge_dups -2 -T cutoffs_$CUTOFFS -c PB.base.cov ${PRI_NAME}.split.self.paf.gz > dups_${CUTOFFS}.bed 2> purge_dups_${CUTOFFS}.log
 
 #D: Get purged primary and haplotig sequences from draft assembly
-cd $OUT_DIR/$NAME
-get_seqs -e dups_$CUTOFFS\.bed $ASM
-mv purged.fa purged_$CUTOFFS\.fa
-mv hap.fa hap_$CUTOFFS\.fa
+#cd $OUT_DIR/p1
+#get_seqs -e dups_${CUTOFFS}.bed $PRI
+#mv purged.fa purged_${CUTOFFS}.fa
+#mv hap.fa hap_${CUTOFFS}.fa
 #######################################################################
 
 
-#E: Merge hap.fa and alt_asm and redo the above steps to get the haplotig set.
+##### PART 3
+mkdir -p $OUT_DIR/q2/idx
+
+#E: Merge hap_.fa and ALT
+cd $OUT_DIR/q2
+cat $ALT >> c2p2.fa; cat $OUT_DIR/p1/hap_${CUTOFFS}.fa >> c2p2.fa
+
+#F: align Illumina PE reads to c2p2 and generate BAM files, then calculate read depth histogram and base-level read depth
+# Indexing the reference (This should be done one time)
+cd $OUT_DIR/q2/idx
+bwa index -p c2p2 -a bwtsw $OUT_DIR/q2/c2p2.fa
+cd $OUT_DIR/q2
+bwa mem -t 18 $OUT_DIR/q2/idx/c2p2 $FQ_1 $FQ_2 | samtools view -@ 6 -b -o - > ${FQ_NAME}.bam
+ngscstat ${FQ_NAME}.bam
+calcuts TX.stat > cutoffs_default 2>calcults_default.log
+python3 $HIST_PLOT -c cutoffs_default TX.stat TX_default.png
+
+### VGP suggested cutoffs:
+calcuts -m$TRANS -u$MAX_DEPTH TX.stat > cutoffs_$CUTOFFS
+python3 $HIST_PLOT -c cutoffs_$CUTOFFS TX.stat TX_${CUTOFFS}.png
+##
+
+#G: Split an assembly and do a self-self alignment
+cd $OUT_DIR/q2
+split_fa c2p2.fa > c2p2.split
+minimap2 -t 18 -xasm5 -DP c2p2.split c2p2.split | pigz -p 6 -c - > c2p2.split.self.paf.gz
+
+
+##### PART 4
+
+#H: Purge haplotigs and overlaps
+cd $OUT_DIR/q2
+purge_dups -2 -T cutoffs_default -c TX.base.cov c2p2.split.self.paf.gz > dups_default.bed 2> purge_dups_default.log
+purge_dups -2 -T cutoffs_$CUTOFFS -c TX.base.cov c2p2.split.self.paf.gz > dups_${CUTOFFS}.bed 2> purge_dups_${CUTOFFS}.log
+
+
+#I: Get purged and haplotig sequences from draft assembly
+cd $OUT_DIR/q2
+get_seqs -e dups_default.bed c2p2.fa
+mv purged.fa purged_default.fa
+mv hap.fa hap_default.fa
+get_seqs -e dups_${CUTOFFS}.bed c2p2.fa
+mv purged.fa purged_${CUTOFFS}.fa
+mv hap.fa hap_${CUTOFFS}.fa
+
+
+########################################################################
+##### REVIEW
+# to manually change cutoff
+#cd $OUT_DIR/q2
+
+#LOW=5
+#MID=49
+#UP=129
+#CUTOFFS=$LOW\_$MID\_$UP
+#calcuts -l$LOW -m$MID -u$UP TX.stat > cutoffs_$CUTOFFS
+#python3 $HIST_PLOT -c cutoffs_$CUTOFFS TX.stat TX_${CUTOFFS}.png
+
+##### PART 4 (post review)
+
+#H: Purge haplotigs and overlaps
+#cd $OUT_DIR/q2
+#purge_dups -2 -T cutoffs_$CUTOFFS -c TX.base.cov c2p2.split.self.paf.gz > dups_${CUTOFFS}.bed 2> purge_dups_${CUTOFFS}.log
+
+#I: Get purged and haplotig sequences from draft assembly
+#cd $OUT_DIR/q2
+#get_seqs -e dups_${CUTOFFS}.bed c2p2.fa
+#mv purged.fa purged_${CUTOFFS}.fa
+#mv hap.fa hap_${CUTOFFS}.fa
+#######################################################################
