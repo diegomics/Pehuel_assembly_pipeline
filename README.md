@@ -7,4 +7,6 @@ Data:
 2. in situ HiC: Illumina HiSeq 2K.v4 2x76, 1 lane -> 30,27 Gbp
 3. WGS: 2 Nanopore MinION -> 2,39 Gbp
 
+===
+
 ![](https://i.imgur.com/s9k3Ime.png)
