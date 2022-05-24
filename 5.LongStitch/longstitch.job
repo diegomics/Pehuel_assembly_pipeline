@@ -26,7 +26,7 @@ source activate LONGSTITCH_env
 
 #########################################################################################
 # Only modify these variables:
-ASM="../Condor_project/Pehuel/intermediates/ragtag/2.correction_PE/ragtag.correct.fasta"
+ASM="../Condor_project/Pehuel/intermediates/purge_dups/p1/purged_33_99.fa"
 ASM_NAME=$(basename $ASM .fasta)
 LONG_READS="../Condor_project/Pehuel/intermediates/demit/minion_demit.fq"
 READS_NAME=$(basename $LONG_READS .fq)
