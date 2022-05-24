@@ -1,4 +1,4 @@
-# Pahuel
+# Pehuel
 
 Complete chromosome-scale genome assembly procedure.
 
