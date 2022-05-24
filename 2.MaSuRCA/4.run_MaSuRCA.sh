@@ -1,9 +1,8 @@
 #!/bin/bash
 
 #SBATCH -J masurca
-#SBATCH -o ../stdout/masurca.%j.out
-#SBATCH -e ../stderr/masurca.%j.err
-##SBATCH -D 
+#SBATCH -o ~/stdout/masurca.%j.out
+#SBATCH -e ~/stderr/masurca.%j.err
 
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=..@...
@@ -21,7 +20,7 @@ module load Boost/1.74.0-GCC-10.2.0
 
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
-export PATH=~/Software/MaSuRCA-3.4.2/bin:$PATH
+export PATH=~/Software/MaSuRCA-4.0.6/bin:$PATH
 
-cd ../Condor_project/Pehuel/intermediates/masurca/PE
+cd ~/Condor_project/Pehuel/intermediates/masurca/PE
 bash assemble.sh
