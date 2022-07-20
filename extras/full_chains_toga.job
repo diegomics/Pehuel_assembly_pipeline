@@ -1,0 +1,72 @@
+#!/bin/bash
+
+#SBATCH -J ChainsTOGA
+#SBATCH -o /scratch/ddepanis/stdout/%x.%j.out
+#SBATCH -e /scratch/ddepanis/stderr/%x.%j.err
+
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=ddepanis@zedat.fu-berlin.de
+
+#SBATCH --partition=begendiv,main
+#SBATCH --qos=standard
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=10G
+#SBATCH --time=10-00:00:00
+
+
+
+##VARIABLES COMMON TO ALL RUNS: ##########################################
+export PATH="/scratch/ddepanis/Software/anaconda3/bin:${PATH}"
+source activate TOGA_env
+
+MAKE_CHAINS="/scratch/ddepanis/Software/make_lastz_chains/make_chains.py"
+TOGA_DIR="/scratch/ddepanis/Software/TOGA"
+export TMPDIR="/scratch/ddepanis/tmp"
+##########################################################################
+
+export PATH="$(dirname ${MAKE_CHAINS})/kent_binaries":${PATH}
+
+
+
+
+##VARIABLES TO CHANGE IN EACH RUN: #######################################
+ORIGINAL_REF_GZ="/scratch/ddepanis/Condor_project/other_genomes/bTaeGut1_v1.p/Taeniopygia_guttata.bTaeGut1_v1.p.dna_sm.toplevel.fa.gz" #masked reference fasta gz compressed
+ORIGINAL_REF_GTF_GZ="/scratch/ddepanis/Condor_project/other_genomes/bTaeGut1_v1.p/Taeniopygia_guttata.bTaeGut1_v1.p.107.gtf.gz" #reference gtf gz compressed
+ISOFORMS_REF_TSV="/scratch/ddepanis/Condor_project/other_genomes/bTaeGut1_v1.p/Taeniopygia_guttata.bTaeGut1_v1.p.isoforms.tsv"
+REF_NAME="finch" #short alias name for reference 
+ASM_FAS="/scratch/ddepanis/Condor_project/Pehuel/VulGry_PEHUEL_v091.pri.masked.fasta" #assembly fasta
+ASM_NAME="pehuel" #short alias name for assmebly
+##########################################################################
+
+CHAINS_OUT_DIR="/scratch/ddepanis/Condor_project/Pehuel/chains/${REF_NAME}_${ASM_NAME}"
+TOGA_OUT_DIR="/scratch/ddepanis/Condor_project/Pehuel/toga/${REF_NAME}_${ASM_NAME}"
+REF_DIR=$(dirname ${ORIGINAL_REF_GZ})
+ASM_DIR=$(dirname ${ASM_FAS})
+
+
+
+
+echo "##### Preparing files"
+#reference fasta headers need to be one word without .
+cd ${REF_DIR}
+zcat ${ORIGINAL_REF_GZ} | sed 's/ .*$//g' | sed 's/\./_/g' > "${REF_NAME}.fasta"
+#faToTwoBit "${REF_NAME}.fasta" "${REF_NAME}.2bit"
+#twoBitInfo "${REF_NAME}.2bit" stdout | sort -k2rn > "${REF_NAME}.chrom.sizes"
+zcat ${ORIGINAL_REF_GTF_GZ} | bedparse gtf2bed | sed 's/\./_/' > "${REF_NAME}.bed"
+
+#cd ${ASM_DIR}
+#faToTwoBit ${ASM_FAS} "${ASM_NAME}.2bit"
+#twoBitInfo "${ASM_NAME}.2bit" stdout | sort -k2rn > "${ASM_NAME}.chrom.sizes"
+
+
+echo "##### Running make_lastz_chains"
+mkdir -p ${CHAINS_OUT_DIR}
+cd ${CHAINS_OUT_DIR}
+#(sleep 10 && echo "TMPDIR=${TMPDIR}" >> "${CHAINS_OUT_DIR}/DEF")& #check if this is actually working, if not do it manually
+python ${MAKE_CHAINS} --project_dir ${CHAINS_OUT_DIR} --force_def --executor slurm --executor_partition begendiv,main --executor_queuesize 50 --cluster_parameters "--qos=standard " ${REF_NAME} ${ASM_NAME} "${REF_DIR}/${REF_NAME}.fasta" ${ASM_FAS}
+
+
+echo "##### Running TOGA"
+mkdir -p ${TOGA_OUT_DIR}
+cd ${TOGA_DIR}
+./toga.py --project_dir ${TOGA_OUT_DIR} -i ${ISOFORMS_REF_TSV} --nextflow_config_dir "${TOGA_DIR}/nextflow_config_files" --cesar_jobs_num 80 "${CHAINS_OUT_DIR}/${REF_NAME}.${ASM_NAME}.allfilled.chain.gz" "${REF_DIR}/${REF_NAME}.bed" "${CHAINS_OUT_DIR}/${REF_NAME}.2bit" "${CHAINS_OUT_DIR}/${ASM_NAME}.2bit"
