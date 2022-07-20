@@ -18,15 +18,11 @@
 ##VARIABLES COMMON TO ALL RUNS: ##########################################
 export PATH="/scratch/ddepanis/Software/anaconda3/bin:${PATH}"
 source activate TOGA_env
-
 MAKE_CHAINS="/scratch/ddepanis/Software/make_lastz_chains/make_chains.py"
 TOGA_DIR="/scratch/ddepanis/Software/TOGA"
+OUT_DIR="/scratch/ddepanis/Condor_project/Pehuel"
 export TMPDIR="/scratch/ddepanis/tmp"
 ##########################################################################
-
-export PATH="$(dirname ${MAKE_CHAINS})/kent_binaries":${PATH}
-
-
 
 
 ##VARIABLES TO CHANGE IN EACH RUN: #######################################
@@ -38,11 +34,12 @@ ASM_FAS="/scratch/ddepanis/Condor_project/Pehuel/VulGry_PEHUEL_v091.pri.masked.f
 ASM_NAME="pehuel" #short alias name for assmebly
 ##########################################################################
 
-CHAINS_OUT_DIR="/scratch/ddepanis/Condor_project/Pehuel/chains/${REF_NAME}_${ASM_NAME}"
-TOGA_OUT_DIR="/scratch/ddepanis/Condor_project/Pehuel/toga/${REF_NAME}_${ASM_NAME}"
+
+export PATH="$(dirname ${MAKE_CHAINS})/kent_binaries":${PATH}
+CHAINS_OUT_DIR="${OUT_DIR}/chains/${REF_NAME}_${ASM_NAME}"
+TOGA_OUT_DIR="${OUT_DIR}/toga/${REF_NAME}_${ASM_NAME}"
 REF_DIR=$(dirname ${ORIGINAL_REF_GZ})
 ASM_DIR=$(dirname ${ASM_FAS})
-
 
 
 
