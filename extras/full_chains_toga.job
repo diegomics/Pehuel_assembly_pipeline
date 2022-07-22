@@ -44,22 +44,16 @@ ASM_DIR=$(dirname ${ASM_FAS})
 
 
 echo "##### Preparing files"
-#reference fasta headers need to be one word without .
+##reference fasta headers need to be one word without .
 cd ${REF_DIR}
 zcat ${ORIGINAL_REF_GZ} | sed 's/ .*$//g' | sed 's/\./_/g' > "${REF_NAME}.fasta"
-#faToTwoBit "${REF_NAME}.fasta" "${REF_NAME}.2bit"
-#twoBitInfo "${REF_NAME}.2bit" stdout | sort -k2rn > "${REF_NAME}.chrom.sizes"
 zcat ${ORIGINAL_REF_GTF_GZ} | bedparse gtf2bed | sed 's/\./_/' > "${REF_NAME}.bed"
-
-#cd ${ASM_DIR}
-#faToTwoBit ${ASM_FAS} "${ASM_NAME}.2bit"
-#twoBitInfo "${ASM_NAME}.2bit" stdout | sort -k2rn > "${ASM_NAME}.chrom.sizes"
 
 
 echo "##### Running make_lastz_chains"
 mkdir -p ${CHAINS_OUT_DIR}
 cd ${CHAINS_OUT_DIR}
-#(sleep 10 && echo "TMPDIR=${TMPDIR}" >> "${CHAINS_OUT_DIR}/DEF")& #check if this is actually working, if not do it manually
+(sleep 25 && echo "TMPDIR=${TMPDIR}" >> "${CHAINS_OUT_DIR}/DEF")&
 python ${MAKE_CHAINS} --project_dir ${CHAINS_OUT_DIR} --force_def --executor slurm --executor_partition begendiv,main --executor_queuesize 50 --cluster_parameters "--qos=standard " ${REF_NAME} ${ASM_NAME} "${REF_DIR}/${REF_NAME}.fasta" ${ASM_FAS}
 
 
