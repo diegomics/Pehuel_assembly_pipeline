@@ -53,7 +53,7 @@ zcat ${ORIGINAL_REF_GTF_GZ} | bedparse gtf2bed | sed 's/\./_/' > "${REF_NAME}.be
 echo "##### Running make_lastz_chains"
 mkdir -p ${CHAINS_OUT_DIR}
 cd ${CHAINS_OUT_DIR}
-(sleep 25 && echo "TMPDIR=${TMPDIR}" >> "${CHAINS_OUT_DIR}/DEF")&
+(sleep 45 && echo "TMPDIR=${TMPDIR}" >> "${CHAINS_OUT_DIR}/DEF")&
 python ${MAKE_CHAINS} --project_dir ${CHAINS_OUT_DIR} --force_def --executor slurm --executor_partition begendiv,main --executor_queuesize 50 --cluster_parameters "--qos=standard " ${REF_NAME} ${ASM_NAME} "${REF_DIR}/${REF_NAME}.fasta" ${ASM_FAS}
 
 
