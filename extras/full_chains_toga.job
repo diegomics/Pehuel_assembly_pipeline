@@ -45,6 +45,7 @@ ASM_DIR=$(dirname ${ASM_FAS})
 
 echo "##### Preparing files"
 ##reference fasta headers need to be one word without .
+##also TOGA only allows a-zA-Z0-9._- for reference genes naming
 cd ${REF_DIR}
 zcat ${ORIGINAL_REF_GZ} | sed 's/ .*$//g' | sed 's/\./_/g' > "${REF_NAME}.fasta"
 zcat ${ORIGINAL_REF_GTF_GZ} | bedparse gtf2bed | sed 's/\./_/' | sed 's/|/_/' | sed 's/:/_/' > "${REF_NAME}.bed"
