@@ -48,7 +48,7 @@ echo "##### Preparing files"
 ##also TOGA only allows a-zA-Z0-9._- for reference genes naming
 cd ${REF_DIR}
 zcat ${ORIGINAL_REF_GZ} | sed 's/ .*$//g' | sed 's/\./_/g' > "${REF_NAME}.fasta"
-zcat ${ORIGINAL_REF_GTF_GZ} | bedparse gtf2bed | sed 's/\./_/' | sed 's/|/_/' | sed 's/:/_/' > "${REF_NAME}.bed"
+zcat ${ORIGINAL_REF_GTF_GZ} | bedparse gtf2bed | sed 's/\./_/g' | sed 's/|/_/g' | sed 's/:/_/g' > "${REF_NAME}.bed"
 
 
 echo "##### Running make_lastz_chains"
