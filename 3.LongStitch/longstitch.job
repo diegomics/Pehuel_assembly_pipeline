@@ -42,4 +42,3 @@ pigz -p 8 $READS_NAME\.fq
 longstitch run draft=$ASM_NAME reads=$READS_NAME G=$GENOME_SIZE
 
 rm $READS_NAME\.fq.gz
-
