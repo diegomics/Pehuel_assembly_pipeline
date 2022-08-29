@@ -38,13 +38,13 @@ ONT="../Condor_project/Pehuel/intermediates/demit/minion_demit.fa"
 ###############################################################################
 
 
-# 1.Scaffold
+# 3.Scaffold
 mkdir -p $OUT_DIR/1.scaffold
 cd $OUT_DIR/1.scaffold
 ragtag.py scaffold $REF_GENOME $ASSEMBLY -o $OUT_DIR/1.scaffold -r -t 24
 
 
-# 2.Correct with PE reads
+# 4.Correct with PE reads
 mkdir -p $OUT_DIR/2.correction_PE
 cd $OUT_DIR/2.correction_PE
 for i in $(ls $PE_DIR/$PE_NAME\.*.fq)
@@ -54,7 +54,7 @@ done
 ragtag.py correct $REF_GENOME $OUT_DIR/1.scaffold/ragtag.scaffold.fasta -o $OUT_DIR/2.correction_PE -t 24 -F PE.fof -T sr
 
 
-# 3.Correct with ONT reads
+# 5.Correct with ONT reads
 mkdir -p $OUT_DIR/3.correction_ONT
 cd $OUT_DIR/3.correction_ONT
 ragtag.py correct $REF_GENOME $OUT_DIR/2.correction_PE/ragtag.correct.fasta -o $OUT_DIR -t 24 -R $ONT -T ont
