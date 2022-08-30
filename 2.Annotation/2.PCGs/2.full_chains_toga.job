@@ -1,11 +1,11 @@
 #!/bin/bash
 
 #SBATCH -J ChainsTOGA
-#SBATCH -o /scratch/ddepanis/stdout/%x.%j.out
-#SBATCH -e /scratch/ddepanis/stderr/%x.%j.err
+#SBATCH -o ../ddepanis/stdout/%x.%j.out
+#SBATCH -e ../ddepanis/stderr/%x.%j.err
 
 #SBATCH --mail-type=END,FAIL
-#SBATCH --mail-user=ddepanis@zedat.fu-berlin.de
+#SBATCH --mail-user=..@..
 
 #SBATCH --partition=begendiv,main
 #SBATCH --qos=standard
@@ -16,21 +16,21 @@
 
 
 ##VARIABLES COMMON TO ALL RUNS: ##########################################
-export PATH="/scratch/ddepanis/Software/anaconda3/bin:${PATH}"
+export PATH="../Software/anaconda3/bin:${PATH}"
 source activate TOGA_env
-MAKE_CHAINS="/scratch/ddepanis/Software/make_lastz_chains/make_chains.py"
-TOGA_DIR="/scratch/ddepanis/Software/TOGA"
-OUT_DIR="/scratch/ddepanis/Condor_project/Pehuel"
-export TMPDIR="/scratch/ddepanis/tmp"
+MAKE_CHAINS="../Software/make_lastz_chains/make_chains.py"
+TOGA_DIR="../Software/TOGA"
+OUT_DIR="../Condor_project/Pehuel"
+export TMPDIR="../tmp"
 ##########################################################################
 
 
 ##VARIABLES TO CHANGE IN EACH RUN: #######################################
-ORIGINAL_REF_GZ="/scratch/ddepanis/Condor_project/other_genomes/bTaeGut1_v1.p/Taeniopygia_guttata.bTaeGut1_v1.p.dna_sm.toplevel.fa.gz" #masked reference fasta gz compressed
-ORIGINAL_REF_GTF_GZ="/scratch/ddepanis/Condor_project/other_genomes/bTaeGut1_v1.p/Taeniopygia_guttata.bTaeGut1_v1.p.107.gtf.gz" #reference gtf gz compressed
-ISOFORMS_REF_TSV="/scratch/ddepanis/Condor_project/other_genomes/bTaeGut1_v1.p/Taeniopygia_guttata.bTaeGut1_v1.p.isoforms.tsv"
+ORIGINAL_REF_GZ="../Condor_project/other_genomes/bTaeGut1_v1.p/Taeniopygia_guttata.bTaeGut1_v1.p.dna_sm.toplevel.fa.gz" #masked reference fasta gz compressed
+ORIGINAL_REF_GTF_GZ="../Condor_project/other_genomes/bTaeGut1_v1.p/Taeniopygia_guttata.bTaeGut1_v1.p.107.gtf.gz" #reference gtf gz compressed
+ISOFORMS_REF_TSV="../Condor_project/other_genomes/bTaeGut1_v1.p/Taeniopygia_guttata.bTaeGut1_v1.p.isoforms.tsv"
 REF_NAME="finch" #short alias name for reference 
-ASM_FAS="/scratch/ddepanis/Condor_project/Pehuel/VulGry_PEHUEL_v091.pri.masked.fasta" #assembly fasta
+ASM_FAS="../Condor_project/Pehuel/VulGry_PEHUEL_v091.pri.masked.fasta" #assembly fasta
 ASM_NAME="pehuel" #short alias name for assmebly
 ##########################################################################
 
