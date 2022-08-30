@@ -1,0 +1,17 @@
+#!/bin/bash
+#SBATCH --partition=begendiv,main
+#SBATCH --nodes=1
+#SBATCH --ntasks=12
+#SBATCH --mem=24000
+#SBATCH --qos=standard
+#SBATCH --time=10-00:00:00
+#SBATCH --job-name=BRAKER
+#SBATCH -o ../Diego_BRAKER%j.out
+#SBATCH -e ../Diego_BRAKER/Diego_BRAKER%j.err
+#SBATCH --mail-user=..@..
+#SBATCH --mail-type=end
+
+#conda activate BRAKER
+module load Boost/1.76.0-GCC-10.3.0
+
+braker.pl --genome=../Condor_project/Pehuel/VulGry_PEHUEL_v092.pri.masked.fasta --prot_seq=../Condor_project/Pehuel/annotation/1_braker/evidence/proteins.fasta --softmasking --cores=12 --gff3

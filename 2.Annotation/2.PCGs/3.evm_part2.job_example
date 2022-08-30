@@ -1,0 +1,35 @@
+#!/bin/bash
+
+#SBATCH -J EVM_13
+
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=..@..
+
+#SBATCH --partition=begendiv,main
+#SBATCH --qos=standard
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=6G
+#SBATCH --time=10-00:00:00
+
+
+##VARIABLES COMMON TO ALL RUNS: ##########################################
+export CONDA_DIR="../Software/anaconda3"
+export TMPDIR="../tmp"
+##########################################################################
+
+export PATH="${CONDA_DIR}/bin:${PATH}"
+source activate EVM_env
+export EVM_UTILS_DIR="${CONDA_DIR}/envs/EVM_env/opt/evidencemodeler-1.1.1/EvmUtils"
+
+
+#VARIABLES TO CHANGE IN EACH RUN: #######################################
+EVM_OUT_DIR="../Condor_project/Pehuel/annotation/3_evm"
+##########################################################################
+
+
+cd ${EVM_OUT_DIR}
+
+
+../Software/anaconda3/envs/EVM_env/opt/evidencemodeler-1.1.1/EvmUtils/.././evidence_modeler.pl -G VulGry_PEHUEL_v092.pri.masked.fasta -g evidence_predictions.gff3 -w ../Condor_project/Pehuel/annotation/3_evm/evidences/weights.txt --exec_dir ../Condor_project/Pehuel/annotation/3_evm/Pehuel_pri_scaffold_4632 > ../Condor_project/Pehuel/annotation/3_evm/Pehuel_pri_scaffold_4632/evm.out 2> ../Condor_project/Pehuel/annotation/3_evm/Pehuel_pri_scaffold_4632/evm.out.log
+../Software/anaconda3/envs/EVM_env/opt/evidencemodeler-1.1.1/EvmUtils/.././evidence_modeler.pl -G VulGry_PEHUEL_v092.pri.masked.fasta -g evidence_predictions.gff3 -w ../Condor_project/Pehuel/annotation/3_evm/evidences/weights.txt --exec_dir ../Condor_project/Pehuel/annotation/3_evm/Pehuel_pri_scaffold_4633 > ../Condor_project/Pehuel/annotation/3_evm/Pehuel_pri_scaffold_4633/evm.out 2> ../Condor_project/Pehuel/annotation/3_evm/Pehuel_pri_scaffold_4633/evm.out.log
+../Software/anaconda3/envs/EVM_env/opt/evidencemodeler-1.1.1/EvmUtils/.././evidence_modeler.pl -G VulGry_PEHUEL_v092.pri.masked.fasta -g evidence_predictions.gff3 -w ../Condor_project/Pehuel/annotation/3_evm/evidences/weights.txt --exec_dir ../Condor_project/Pehuel/annotation/3_evm/Pehuel_pri_scaffold_4634 > ../Condor_project/Pehuel/annotation/3_evm/Pehuel_pri_scaffold_4634/evm.out 2> ../Condor_project/Pehuel/annotation/3_evm/Pehuel_pri_scaffold_4634/evm.out.log

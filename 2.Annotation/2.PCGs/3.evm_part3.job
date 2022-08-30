@@ -1,0 +1,47 @@
+#!/bin/bash
+
+### Full EVM installation: ###
+### conda create -n EVM_env -c bioconda evidencemodeler ucsc-bedtogenepred ucsc-genepredtogtf genometools-genometools agat
+##############################
+
+#SBATCH -J EVM_3
+#SBATCH -o ../stdout/%x.%j.out
+#SBATCH -e ../stderr/%x.%j.err
+
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=..@..
+
+#SBATCH --partition=begendiv,main
+#SBATCH --qos=standard
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=8G
+#SBATCH --time=10-00:00:00
+
+
+
+##VARIABLES COMMON TO ALL RUNS: ##########################################
+export CONDA_DIR="../Software/anaconda3"
+export TMPDIR="../tmp"
+##########################################################################
+
+export PATH="${CONDA_DIR}/bin:${PATH}"
+source activate EVM_env
+export EVM_UTILS_DIR="${CONDA_DIR}/envs/EVM_env/opt/evidencemodeler-1.1.1/EvmUtils"
+
+
+
+#VARIABLES TO CHANGE IN EACH RUN: #######################################
+EVM_OUT_DIR="../Condor_project/Pehuel/annotation/3_evm"
+ASM_FASTA="../Condor_project/Pehuel/VulGry_PEHUEL_v092.pri.masked.fasta"
+##########################################################################
+
+
+echo "### 4. combining the outputs"
+cd ${EVM_OUT_DIR}
+
+${EVM_UTILS_DIR}/recombine_EVM_partial_outputs.pl --partitions partitions_list.out --output_file_name evm.out
+
+echo "### 5. converting to GFF3 format"
+${EVM_UTILS_DIR}/convert_EVM_outputs_to_GFF3.pl  --partitions partitions_list.out --output evm.out  --genome ${ASM_FASTA}
+
+find . -regex ".*evm.out.gff3" -exec cat {} \; > EVM.all.gff3

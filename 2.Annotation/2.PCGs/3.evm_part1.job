@@ -1,0 +1,129 @@
+#!/bin/bash
+
+### Full EVM installation: ###
+### conda create -n EVM_env -c bioconda evidencemodeler ucsc-bedtogenepred ucsc-genepredtogtf genometools-genometools agat
+##############################
+
+#SBATCH -J EVM
+#SBATCH -o /scratch/ddepanis/stdout/%x.%j.out
+#SBATCH -e /scratch/ddepanis/stderr/%x.%j.err
+
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=ddepanis@zedat.fu-berlin.de
+
+#SBATCH --partition=begendiv,main
+#SBATCH --qos=standard
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=8G
+#SBATCH --time=10-00:00:00
+
+
+
+##VARIABLES COMMON TO ALL RUNS: ##########################################
+export CONDA_DIR="/scratch/ddepanis/Software/anaconda3"
+export TMPDIR="/scratch/ddepanis/tmp"
+##########################################################################
+
+export PATH="${CONDA_DIR}/bin:${PATH}"
+source activate EVM_env
+export EVM_UTILS_DIR="${CONDA_DIR}/envs/EVM_env/opt/evidencemodeler-1.1.1/EvmUtils"
+
+
+
+#VARIABLES TO CHANGE IN EACH RUN: #######################################
+EVM_OUT_DIR="/scratch/ddepanis/Condor_project/Pehuel/annotation/3_evm"
+
+TOGA_OUT_DIR="/scratch/ddepanis/Condor_project/Pehuel/annotation/2_toga"
+TOGA_DIR="/scratch/ddepanis/Software/TOGA"
+
+BRAKER_OUT_FILE="/scratch/ddepanis/Condor_project/Pehuel/annotation/1_braker/braker.gff3"
+
+ASM_FASTA="/scratch/ddepanis/Condor_project/Pehuel/VulGry_PEHUEL_v092.pri.masked.fasta"
+##########################################################################
+
+
+echo "### 0. generating all the required inputs to EVM"
+mkdir -p "${EVM_OUT_DIR}/evidences"
+cd "${EVM_OUT_DIR}/evidences"
+
+#TOGA output to EVM_GFF3
+chmod +x "${TOGA_DIR}/supply/evmFormatIsoSeq.pl"
+
+for i in $(ls ${TOGA_OUT_DIR}/*/query_annotation.bed)
+do
+	bedToGenePred $i stdout | genePredToGtf file stdin stdout | gt gtf_to_gff3 -tidy | gt gff3 -tidy -sort -setsource TOGA.$(basename $(dirname $i)) | ${TOGA_DIR}/supply/evmFormatIsoSeq.pl > $(basename $(dirname $i)).gff3
+	echo -e "OTHER_PREDICTION\tTOGA.$(basename $(dirname $i))\t8" >> weights.txt
+	agat_sp_manage_IDs.pl --gff $(basename $(dirname $i)).gff3 --prefix $(basename $(dirname $i)) -o $(basename $(dirname $i))_edited.gff3
+done
+
+for i in $(ls *_edited.gff3)
+do
+	grep -v "\#\#g" $i | grep -v "\#\#s" | sed 's/#.*//g' >> toga_predictions.tmp
+done
+
+cat toga_predictions.tmp | gt gff3 -tidy -sort | ${TOGA_DIR}/supply/evmFormatIsoSeq.pl | grep -v "\#\#g" | grep -v "\#\#s" | sed 's/#.*//g' > evidence_predictions.gff3
+rm toga_predictions.tmp
+
+
+#BRAKER2 gtf/gff to EVM_GFF3
+if [ ${BRAKER_OUT_FILE##*.} = "gtf" ]; then
+	if [ ! -f "${EVM_UTILS_DIR}/gtf2gff.pl" ]; then
+			echo "gtf2gff.pl not available, downloading..."
+			wget -P ${EVM_UTILS_DIR} https://raw.githubusercontent.com/nextgenusfs/augustus/master/scripts/gtf2gff.pl
+			chmod +x "${EVM_UTILS_DIR}/gtf2gff.pl"
+	else
+			echo "gtf2gff.pl already available"
+	fi
+
+	${EVM_UTILS_DIR}/gtf2gff.pl < ${BRAKER_OUT_FILE} --gff3 --out=$(basename ${BRAKER_OUT_FILE} .gtf)_temp1.gff
+
+	if [ ! -f "${EVM_UTILS_DIR}/add_name_to_gff3.pl" ]; then
+			echo "add_name_to_gff3.pl not available, downloading..."
+			wget -P ${EVM_UTILS_DIR} https://raw.githubusercontent.com/Gaius-Augustus/Augustus/master/scripts/add_name_to_gff3.pl
+			chmod +x "${EVM_UTILS_DIR}/add_name_to_gff3.pl"
+	else
+			echo "add_name_to_gff3.pl already available"
+	fi
+
+	${EVM_UTILS_DIR}/add_name_to_gff3.pl < $(basename ${BRAKER_OUT_FILE} .gtf)_temp1.gff --out=$(basename ${BRAKER_OUT_FILE} .gtf)_temp2.gff --filter
+
+	"${EVM_UTILS_DIR}/misc/augustus_GFF3_to_EVM_GFF3.pl" $(basename ${BRAKER_OUT_FILE} .gtf)_temp2.gff > $(basename ${BRAKER_OUT_FILE} .gtf)_evm.gff3
+	
+	rm $(basename ${BRAKER_OUT_FILE} .gtf)_temp1.gff
+	rm $(basename ${BRAKER_OUT_FILE} .gtf)_temp2.gff
+
+	echo -e "ABINITIO_PREDICTION\tAugustus\t2" >> weights.txt
+	cat $(basename ${BRAKER_OUT_FILE} .gtf)_evm.gff3 >> evidence_predictions.gff3
+
+elif [ ${BRAKER_OUT_FILE##*.} = "gff3" ]; then
+	sed 's/;$//g' ${BRAKER_OUT_FILE} > $(basename ${BRAKER_OUT_FILE} .gff3)_temp.gff3
+	${EVM_UTILS_DIR}/misc/augustus_GFF3_to_EVM_GFF3.pl $(basename ${BRAKER_OUT_FILE} .gff3)_temp.gff3 > $(basename ${BRAKER_OUT_FILE} .gff3)_evm.gff3
+
+	rm $(basename ${BRAKER_OUT_FILE} .gff3)_temp.gff3
+
+        echo -e "ABINITIO_PREDICTION\tAUGUSTUS\t2" >> weights.txt
+        cat $(basename ${BRAKER_OUT_FILE} .gff3)_evm.gff3 >> evidence_predictions.gff3
+
+else
+	echo "invalid BRAKER out file"
+fi
+
+
+
+echo "### 1. partitioning the inputs into smaller data sets"
+cd ${EVM_OUT_DIR}
+
+${EVM_UTILS_DIR}/partition_EVM_inputs.pl --genome ${ASM_FASTA} --gene_predictions ${EVM_OUT_DIR}/evidences/evidence_predictions.gff3 --segmentSize 1000000 --overlapSize 150000 --partition_listing partitions_list.out
+
+
+echo "### 2. creating a series of commands to execute"
+cd ${EVM_OUT_DIR}
+
+${EVM_UTILS_DIR}/write_EVM_commands.pl --genome ${ASM_FASTA} --weights ${EVM_OUT_DIR}/evidences/weights.txt --gene_predictions ${EVM_OUT_DIR}/evidences/evidence_predictions.gff3 --output_file_name evm.out --partitions partitions_list.out > commands.list
+
+#echo "### 3. executing EVM on each of the partitioned data sets"
+####SPLIT THE COMMAND.LIST FILE AND RUN SEVERAL JOBS!!!!!!
+####CHECK OUT THE PART2 EXAMPLE
+
+
+
