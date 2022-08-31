@@ -1,0 +1,35 @@
+#!/bin/bash
+
+##conda install -c bioconda blobtools
+
+#SBATCH -J blob
+#SBATCH -o ../stdout/%x.%j.out
+#SBATCH -e ../stderr/%x.%j.err
+
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=..@..
+
+#SBATCH --partition=begendiv,main
+#SBATCH --qos=standard
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=24G
+#SBATCH --time=48:00:00
+
+export PATH="../Software/anaconda3/bin:${PATH}"
+source activate BLOB_env
+
+
+###FIRST NEED TO OBTAIN BLAST RESULTS USING NT DATABASE:
+###blastn -db /srv/public/shared/data/nt/nt -query VulGry_PEHUEL_v091.pri.masked.fasta -outfmt "6 qseqid staxids bitscore std" -max_target_seqs 10 -max_hsps 1 -evalue 1e-25 -num_threads 48 -out VulGry_PEHUEL_v091.pri.masked.blast6
+###
+
+BLOB_DIR="../Software/blobtools"
+OUT_DIR="../Condor_project/Pehuel/evaluation/blob"
+ASM="${OUT_DIR}/VulGry_PEHUEL_v091.pri.masked.fa"
+BAM="${OUT_DIR}/illuminaPE_demit.bam"
+BLAST="${OUT_DIR}/VulGry_PEHUEL_v091.pri.masked.blast6"
+
+
+"${BLOB_DIR}/blobtools" create -i $ASM -b $BAM -t $BLAST -o "${OUT_DIR}/pehuel" --nodes "${BLOB_DIR}/data/nodes.dmp" --names "${BLOB_DIR}/data/names.dmp"
+"${BLOB_DIR}/blobtools" view -i "${OUT_DIR}/pehuel.blobDB.json"
+"${BLOB_DIR}/blobtools" plot -i "${OUT_DIR}/pehuel.blobDB.json"
